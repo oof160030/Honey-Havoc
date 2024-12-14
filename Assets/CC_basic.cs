@@ -5,21 +5,18 @@ using TMPro;
 
 public class CC_basic : MonoBehaviour
 {
+    public MGR manager;
     private Rigidbody2D RB2;
 
     public float maxMoveSpeed, accelRate, decelRate;
     private int xIn, yIn;
-
-    private int honeyCount;
-    public TextMeshProUGUI scoreBox;
+    private bool controlOn; public void ControlOn(bool X) { controlOn = X; }
     
     // Start is called before the first frame update
     void Start()
     {
         RB2 = GetComponent<Rigidbody2D>();
-        honeyCount = 0;
-
-        scoreBox.text = honeyCount.ToString();
+        controlOn = false;
     }
 
     // Update is called once per frame
@@ -39,6 +36,13 @@ public class CC_basic : MonoBehaviour
         if (RB2.velocity.magnitude > maxMoveSpeed)
             RB2.velocity = RB2.velocity.normalized * maxMoveSpeed;
 
+        //Allow dash, if (1) space pressed, and (2) directional input and (3) enough honey on hand 
+        if(Input.GetKeyDown(KeyCode.Space) && (xIn != 0 || yIn != 0) && manager.honeyCount >= 3)
+        {
+            RB2.velocity = new Vector2(xIn, yIn).normalized * maxMoveSpeed;
+            manager.UpdateHoney(-3);
+        }
+
         //Reduce speed without input
         if (xIn == 0 && yIn == 0 && (decelRate * Time.deltaTime) >= RB2.velocity.magnitude)
             RB2.velocity = Vector2.zero;
@@ -52,9 +56,16 @@ public class CC_basic : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Item"))
         {
-            honeyCount++;
-            scoreBox.text = honeyCount.ToString();
+            manager.UpdateHoney(1);
             Destroy(collision.gameObject);
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.gameObject.CompareTag("Wall"))
+        {
+            manager.UpdateHoney(-1);            
         }
     }
 }
